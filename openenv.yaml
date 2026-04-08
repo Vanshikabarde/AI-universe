@@ -1,0 +1,107 @@
+name: banking-customer-service
+version: "1.0.0"
+description: >
+  A real-world RL environment where an LLM agent acts as a banking customer
+  service representative. The agent resolves customer queries by calling
+  banking tools (check balance, block card, raise dispute, etc.) and
+  producing a final response graded on tool correctness and resolution quality.
+
+tags:
+  - openenv
+  - customer-service
+  - banking
+  - finance
+  - tool-use
+  - multi-step
+  - real-world
+
+authors:
+  - name: Hackathon Submission
+    affiliation: Meta × PyTorch × Scaler OpenEnv Hackathon 2026
+
+license: MIT
+
+environment:
+  type: text
+  multi_turn: true
+  max_steps: 8
+  reward_range: [0.0, 1.0]
+
+observation_space:
+  type: structured
+  fields:
+    task_id:         {type: string}
+    difficulty:      {type: string, enum: [easy, medium, hard]}
+    customer:        {type: object, fields: {id: string, name: string, email: string}}
+    query:           {type: string, description: "Customer's natural language request"}
+    tools_available: {type: array,  description: "List of callable banking tools"}
+    instructions:    {type: string}
+    history:         {type: array,  description: "Tool call results so far"}
+    step_count:      {type: integer}
+    done:            {type: boolean}
+    feedback:        {type: string, nullable: true}
+
+action_space:
+  type: structured
+  variants:
+    tool_call:
+      fields:
+        action_type: {type: string, const: tool_call}
+        tool:        {type: string, enum: [check_balance, get_transactions, block_card, check_loan_status, raise_dispute]}
+        params:      {type: object}
+    final_response:
+      fields:
+        action_type: {type: string, const: final_response}
+        response:    {type: string}
+
+tasks:
+  - id: T001
+    difficulty: easy
+    description: "Simple savings account balance enquiry"
+  - id: T002
+    difficulty: easy
+    description: "Recent transaction history lookup"
+  - id: T003
+    difficulty: easy
+    description: "Loan status and next EMI enquiry"
+  - id: T004
+    difficulty: medium
+    description: "Emergency card block"
+  - id: T005
+    difficulty: medium
+    description: "Suspicious transaction — look up then dispute"
+  - id: T006
+    difficulty: medium
+    description: "Multi-account balance + loan EMI date"
+  - id: T007
+    difficulty: hard
+    description: "Three tasks in one query — card block + balance + loan"
+  - id: T008
+    difficulty: hard
+    description: "Full fraud investigation — transactions + dispute + balance"
+  - id: T009
+    difficulty: hard
+    description: "Card fraud + account investigation + loan check"
+
+reward_function:
+  type: weighted_composite
+  components:
+    required_tools_used:    {weight: 0.40, description: "Agent called all required tools"}
+    task_resolved:          {weight: 0.35, description: "Final response contains correct information"}
+    no_forbidden_tools:     {weight: 0.10, description: "No irrelevant tools called"}
+    response_quality:       {weight: 0.15, description: "Response length and politeness"}
+  partial_credit: true
+  intermediate_rewards: true
+
+endpoints:
+  reset: POST /reset
+  step:  POST /step
+  state: GET  /state
+  health: GET /health
+
+deployment:
+  platform: huggingface-spaces
+  runtime: docker
+  port: 8000
+  memory_gb: 4
+  vcpus: 2
