@@ -23,7 +23,6 @@ def root():
     return {
         "status": "Running",
         "project": "Banking Customer Service OpenEnv",
-        "organization": "SIRT Bhopal",
         "tasks_available": ["T001", "T002", "T003", "T004", "T005", "T006", "T007", "T008", "T009"],
         "docs": "/docs"
     }
