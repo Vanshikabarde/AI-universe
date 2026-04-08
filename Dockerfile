@@ -14,7 +14,7 @@ COPY --chown=appuser:appuser . .
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 7860
 
 # HF Spaces expects the app to bind on port 7860 by default,
 # but we expose 8000 and set PORT env var
