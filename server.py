@@ -77,7 +77,8 @@ def health() -> dict:
 # ── Entry point ────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
+    # Hugging Face PORT environment variable use karta hai
+    port = int(os.getenv("PORT", 7860)) 
     print(f"Banking CS OpenEnv server starting on port {port}")
-    print(f"API docs: http://localhost:{port}/docs")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # DHAYAN DE: "server:app" likhna zaroori hai (filename:objectname)
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
