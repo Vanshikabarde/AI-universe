@@ -185,24 +185,46 @@ class BankingCSEnv:
         return StepResult(observation=obs, reward=partial, done=False, truncated=False,
                           info={"tool": tool_name, "result": result, "partial_reward": partial})
 
-    def _response_step(self, action: BankingAction) -> StepResult:
+   def _response_step(self, action: BankingAction) -> StepResult:
         response = action.response or ""
         self._done = True
 
         grade   = self._task.grade(self._tool_calls, response)
-        score   = grade["score"]
-        fb      = self._build_feedback(grade)
+        
+        # --- PHASE 2 FIX: SQUEEZE SCORE BETWEEN 0.01 AND 0.99 ---
+        raw_score = grade["score"]
+        # Agar score 1.0 hai toh 0.98 kar do, agar 0.0 hai toh 0.02 kar do
+        # Isse score hamesha (0, 1) ki range mein rahega
+        safe_score = max(0.02, min(0.98, raw_score))
+        # -------------------------------------------------------
+
+        fb = self._build_feedback(grade)
 
         reward_obj = BankingReward(
-            value=score,
+            value=safe_score, # Updated to safe_score
             breakdown=RewardBreakdown(
                 required_tools=grade["breakdown"]["required_tools"],
                 task_resolved=grade["breakdown"]["task_resolved"],
                 no_forbidden_tools=grade["breakdown"]["no_forbidden_tools"],
                 response_quality=grade["breakdown"]["response_quality"],
-                total=score,
+                total=safe_score, # Updated to safe_score
             ),
             feedback=fb,
+        )
+
+        obs = self._make_obs(done=True, feedback=fb)
+        return StepResult(
+            observation=obs,
+            reward=safe_score, # Updated to safe_score
+            done=True,
+            truncated=False,
+            info={
+                "reward_obj": reward_obj.model_dump(),
+                "grade": grade,
+                "tools_used": self._tool_calls,
+                "steps_taken": self._step_count,
+                "task_id": self._task.id,
+            }
         )
 
         obs = self._make_obs(done=True, feedback=fb)
