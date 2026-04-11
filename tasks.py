@@ -78,13 +78,23 @@ class Task:
         missing_tools = list(required - used)
         missing_kws   = [k for k in kws if k.lower() not in resp_lower]
 
+        total = round(tools_score + resolved_score + no_bad_score + quality_score, 4)
+
+        if total >= 1.0:
+            total = 0.98
+        elif total <= 0.0:
+            total = 0.02
+
+        missing_tools = list(required - used)
+        missing_kws   = [k for k in kws if k.lower() not in resp_lower]
+
         return {
             "score": total,
             "breakdown": {
-                "required_tools":     tools_score,
-                "task_resolved":      resolved_score,
-                "no_forbidden_tools": no_bad_score,
-                "response_quality":   quality_score,
+                "required_tools":      tools_score,
+                "task_resolved":       resolved_score,
+                "no_forbidden_tools":  no_bad_score,
+                "response_quality":    quality_score,
             },
             "missing_tools":    missing_tools,
             "missing_keywords": missing_kws,
